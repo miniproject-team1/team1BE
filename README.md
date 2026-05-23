@@ -114,6 +114,67 @@ API 명세서 기준으로 작업해주세요.
 
 <br>
 
+<br>
+
+---
+
+## ⚙️ 로컬 환경 설정 (clone 후 필수!)
+
+`application.yaml`은 DB 비밀번호 등 민감정보가 있어 깃허브에 올라가지 않습니다 (`.gitignore` 처리).
+**clone 받은 후 직접 만들어야 서버가 실행됩니다.**
+
+### 1. 설정 파일 생성
+
+`src/main/resources/` 경로에 `application.yaml` 파일을 새로 만들고,
+아래 내용을 **그대로 복사**해 넣습니다. (들여쓰기가 깨지지 않게 주의!)
+
+```yaml
+spring:
+  application:
+    name: be
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/miniproject?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: root
+    password: YOUR_DB_PASSWORD        # ← 본인 MySQL 비밀번호로 변경
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+    open-in-view: false
+
+server:
+  port: 8080
+
+jwt:
+  secret: YOUR_JWT_SECRET_KEY        # 팀 공용 값으로 변경
+  access-token-expiration: 3600000   # 1시간 (밀리초)
+```
+
+### 2. 본인 환경에 맞게 값 변경
+
+| 항목 | 설명 |
+|------|------|
+| `datasource.password` | 본인 로컬 MySQL 비밀번호 |
+| `jwt.secret` | JWT 서명 키 — **단톡방 공지의 팀 공용 값** 사용 |
+
+### 3. MySQL 데이터베이스 생성
+
+로컬 MySQL에 `miniproject` 데이터베이스가 없으면 먼저 생성합니다.
+
+```sql
+CREATE DATABASE miniproject CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+> ⚠️ `application.yaml`은 절대 커밋하지 마세요 (`.gitignore`에 등록되어 있음)
+
+<br>
+
 ## 👥 Team
 
 | 도희 | 수민 | 윤아 | 윤서 | 다은 | 예은 |
