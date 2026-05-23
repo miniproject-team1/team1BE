@@ -1,2 +1,2 @@
 jwt:
-  secret: daylogSecretKeyForJwtTokenMustBeLongEnough256Bit!!
+  secret: ${JWT_SECRET}
