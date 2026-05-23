@@ -8,9 +8,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
 
 @Entity
 @Table(name = "users")
@@ -35,4 +35,15 @@ public class User extends BaseEntity {
     @Column(name = "nickname", nullable = false, length = 20)
     private String nickname;
 
+    @Builder
+    private User(String loginId, String password, String email, String nickname) {
+        this.loginId = loginId;
+        this.password = password;
+        this.email = email;
+        this.nickname = nickname;
+    }
+
+    public void changeNickname(String nickname) {
+        this.nickname = nickname;
+    }
 }

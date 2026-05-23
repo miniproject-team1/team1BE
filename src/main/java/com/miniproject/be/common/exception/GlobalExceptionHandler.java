@@ -13,6 +13,17 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+
+    @ExceptionHandler(CustomException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCustomException(CustomException e) {
+        ErrorCode errorCode = e.getErrorCode();
+        log.warn("CustomException: [{}] {}", errorCode.getCode(), errorCode.getMessage());
+        return ResponseEntity
+                .status(errorCode.getStatus())
+                .body(ApiResponse.error(errorCode.getMessage()));
+    }
+
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getFieldErrors().stream()
@@ -23,12 +34,14 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(message));
     }
 
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException e) {
         log.warn("IllegalArgumentException: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(e.getMessage()));
     }
+
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
