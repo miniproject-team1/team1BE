@@ -1,5 +1,9 @@
 package com.miniproject.be.domain.wishlist.service;
 
+import com.miniproject.be.common.exception.CustomException;
+import com.miniproject.be.common.exception.ErrorCode;
+import com.miniproject.be.domain.user.entity.User;
+import com.miniproject.be.domain.user.repository.UserRepository;
 import com.miniproject.be.domain.wishlist.dto.request.WishlistCreateRequest;
 import com.miniproject.be.domain.wishlist.dto.request.WishlistUpdateRequest;
 import com.miniproject.be.domain.wishlist.dto.response.*;
@@ -17,11 +21,12 @@ import java.util.List;
 public class WishlistService {
 
     private final WishlistRepository wishlistRepository;
+    private final UserRepository userRepository;
 
-    // 전체 조회
-    public WishlistListResponse getWishlist() {
+    // 전체 조회 (내 것만)
+    public WishlistListResponse getWishlist(Long userId) {
 
-        List<Wishlist> entities = wishlistRepository.findAll();
+        List<Wishlist> entities = wishlistRepository.findAllByUserId(userId);
 
         List<WishlistItemResponse> items = entities.stream()
                 .map(w -> new WishlistItemResponse(
@@ -47,9 +52,13 @@ public class WishlistService {
 
     // 등록
     @Transactional
-    public WishlistCreateResponse createWishlist(WishlistCreateRequest request) {
+    public WishlistCreateResponse createWishlist(Long userId, WishlistCreateRequest request) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         Wishlist wishlist = new Wishlist(
+                user,
                 request.getItemName(),
                 request.getPrice(),
                 request.getUrl()
@@ -68,10 +77,9 @@ public class WishlistService {
 
     // 수정
     @Transactional
-    public WishlistUpdateResponse updateWishlist(Long id, WishlistUpdateRequest request) {
+    public WishlistUpdateResponse updateWishlist(Long userId, Long id, WishlistUpdateRequest request) {
 
-        Wishlist wishlist = wishlistRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 항목 없음"));
+        Wishlist wishlist = findOwnedWishlist(userId, id);
 
         wishlist.update(
                 request.getItemName(),
@@ -95,10 +103,9 @@ public class WishlistService {
 
     // 구매 상태 변경
     @Transactional
-    public WishlistPurchaseResponse purchaseWishlist(Long id, boolean isPurchased) {
+    public WishlistPurchaseResponse purchaseWishlist(Long userId, Long id, boolean isPurchased) {
 
-        Wishlist wishlist = wishlistRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("해당 항목 없음"));
+        Wishlist wishlist = findOwnedWishlist(userId, id);
 
         wishlist.changePurchased(isPurchased);
 
@@ -112,13 +119,26 @@ public class WishlistService {
 
     // 삭제
     @Transactional
-    public WishlistDeleteResponse deleteWishlist(Long id) {
+    public WishlistDeleteResponse deleteWishlist(Long userId, Long id) {
 
-        wishlistRepository.deleteById(id);
+        Wishlist wishlist = findOwnedWishlist(userId, id);
+
+        wishlistRepository.delete(wishlist);
 
         return new WishlistDeleteResponse(
                 true,
                 "삭제 완료"
         );
+    }
+
+    // 위시리스트를 찾고, 그게 이 유저의 것인지 검증하는 공통 메서드
+    private Wishlist findOwnedWishlist(Long userId, Long id) {
+        Wishlist wishlist = wishlistRepository.findById(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.WISHLIST_NOT_FOUND));
+
+        if (!wishlist.getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.WISHLIST_ACCESS_DENIED);
+        }
+        return wishlist;
     }
 }

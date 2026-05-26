@@ -1,11 +1,13 @@
 package com.miniproject.be.domain.wishlist.controller;
 
+import com.miniproject.be.auth.CustomUserDetails;
 import com.miniproject.be.common.response.ApiResponse;
 import com.miniproject.be.domain.wishlist.dto.request.*;
 import com.miniproject.be.domain.wishlist.dto.response.*;
 import com.miniproject.be.domain.wishlist.service.WishlistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,10 +19,12 @@ public class WishlistController {
 
     // 전체 조회
     @GetMapping("/wishlist")
-    public ResponseEntity<ApiResponse<WishlistListResponse>> getWishlist() {
+    public ResponseEntity<ApiResponse<WishlistListResponse>> getWishlist(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        wishlistService.getWishlist(),
+                        wishlistService.getWishlist(userDetails.getUserId()),
                         "조회 성공"
                 )
         );
@@ -29,10 +33,12 @@ public class WishlistController {
     // 등록
     @PostMapping("/wishlist")
     public ResponseEntity<ApiResponse<WishlistCreateResponse>> createWishlist(
-            @RequestBody WishlistCreateRequest request) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody WishlistCreateRequest request
+    ) {
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        wishlistService.createWishlist(request),
+                        wishlistService.createWishlist(userDetails.getUserId(), request),
                         "등록 성공"
                 )
         );
@@ -41,12 +47,13 @@ public class WishlistController {
     // 수정
     @PutMapping("/wishlist/{id}")
     public ResponseEntity<ApiResponse<WishlistUpdateResponse>> updateWishlist(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long id,
             @RequestBody WishlistUpdateRequest request
     ) {
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        wishlistService.updateWishlist(id, request),
+                        wishlistService.updateWishlist(userDetails.getUserId(), id, request),
                         "수정 성공"
                 )
         );
@@ -55,12 +62,13 @@ public class WishlistController {
     // 구매 상태 변경
     @PatchMapping("/wishlist/{id}/purchase")
     public ResponseEntity<ApiResponse<WishlistPurchaseResponse>> purchaseWishlist(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long id,
             @RequestBody WishlistPurchaseRequest request
     ) {
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        wishlistService.purchaseWishlist(id, request.isPurchased()),
+                        wishlistService.purchaseWishlist(userDetails.getUserId(), id, request.isPurchased()),
                         "구매 상태 변경 성공"
                 )
         );
@@ -69,10 +77,12 @@ public class WishlistController {
     // 삭제
     @DeleteMapping("/wishlist/{id}")
     public ResponseEntity<ApiResponse<WishlistDeleteResponse>> deleteWishlist(
-            @PathVariable Long id) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long id
+    ) {
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        wishlistService.deleteWishlist(id),
+                        wishlistService.deleteWishlist(userDetails.getUserId(), id),
                         "삭제 성공"
                 )
         );

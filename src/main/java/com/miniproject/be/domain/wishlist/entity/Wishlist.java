@@ -1,22 +1,26 @@
 package com.miniproject.be.domain.wishlist.entity;
 
+import com.miniproject.be.common.BaseEntity;
+import com.miniproject.be.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
 @Entity
 @Table(name = "wishlists")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Wishlist {
+public class Wishlist extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "wishlist_id")
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     private String itemName;
 
@@ -26,14 +30,12 @@ public class Wishlist {
 
     private boolean isPurchased;
 
-    private LocalDate createdAt;
-
-    public Wishlist(String itemName, int price, String url) {
+    public Wishlist(User user, String itemName, int price, String url) {
+        this.user = user;
         this.itemName = itemName;
         this.price = price;
         this.url = url;
         this.isPurchased = false;
-        this.createdAt = LocalDate.now();
     }
 
     public void update(String itemName, int price, String url) {
