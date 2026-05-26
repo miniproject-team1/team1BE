@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public interface DiaryRepository extends JpaRepository<Diary, Long> {
@@ -19,4 +20,15 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             """)
     Optional<Diary> findByUserIdAndDiaryDate(@Param("userId") Long userId,
                                              @Param("diaryDate") LocalDate diaryDate);
+
+    @Query("""
+            select distinct d
+            from Diary d
+            left join fetch d.expenses
+            where d.user.id = :userId
+              and d.diaryDate between :startDate and :endDate
+            """)
+    List<Diary> findAllByUserAndPeriod(@Param("userId") Long userId,
+                                       @Param("startDate") LocalDate startDate,
+                                       @Param("endDate") LocalDate endDate);
 }
