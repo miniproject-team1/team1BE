@@ -46,8 +46,8 @@
 - *****!!작업 시작 전 항상 최신화 하고 시작하기!!*****
 
 ```bash
-git checkout develop
-git pull origin develop
+git checkout main
+git pull origin main
 git checkout -b feature/기능명
 ```
 작성한 코드는 반드시 본인이 만든 브랜치로 푸시해주신 후 
