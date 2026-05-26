@@ -1,45 +1,57 @@
 package com.miniproject.be.domain.mypage.service;
 
-import com.miniproject.be.domain.mypage.repository.MypageRepository;
+import com.miniproject.be.common.exception.CustomException;
+import com.miniproject.be.common.exception.ErrorCode;
+import com.miniproject.be.domain.mypage.dto.response.BudgetResponse;
+import com.miniproject.be.domain.mypage.entity.Budget;
+import com.miniproject.be.domain.mypage.repository.BudgetRepository;
+import com.miniproject.be.domain.user.entity.User;
+import com.miniproject.be.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.miniproject.be.domain.mypage.dto.response.BudgetResponse;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MypageService {
 
-    private final MypageRepository mypageRepository;
+    private final BudgetRepository budgetRepository;
+    private final UserRepository userRepository;
 
-    // 월별 예산 조회
-    public BudgetResponse getBudget(int year, int month) {
 
-        return new BudgetResponse(
-                year,
-                month,
-                500000
-        );
+    public BudgetResponse getBudget(Long userId, int year, int month) {
+
+        int amount = budgetRepository
+                .findByUser_IdAndYearAndMonth(userId, year, month)
+                .map(Budget::getAmount)
+                .orElse(0);
+
+        return new BudgetResponse(year, month, amount);
     }
 
-    // 월별 예산 설정 및 수정
+
     @Transactional
-    public BudgetResponse updateBudget(
-            int year,
-            int month,
-            int budgetAmount
-    ) {
+    public BudgetResponse updateBudget(Long userId, int year, int month, int budgetAmount) {
 
-        return new BudgetResponse(
-                year,
-                month,
-                budgetAmount
-        );
+        Budget budget = budgetRepository
+                .findByUser_IdAndYearAndMonth(userId, year, month)
+                .orElse(null);
+
+        if (budget == null) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+            budget = new Budget(user, year, month, budgetAmount);
+            budgetRepository.save(budget);
+        } else {
+            budget.changeAmount(budgetAmount);
+        }
+
+        return new BudgetResponse(year, month, budget.getAmount());
     }
 
-    // 분석 데이터 요약 조회
-    public Object getAnalyticsSummary(String period) {
+
+    public Object getAnalyticsSummary(Long userId, String period) {
         return null;
     }
 }
