@@ -3,6 +3,7 @@ package com.miniproject.be.domain.mypage.controller;
 import com.miniproject.be.auth.CustomUserDetails;
 import com.miniproject.be.common.response.ApiResponse;
 import com.miniproject.be.domain.mypage.dto.request.BudgetUpdateRequest;
+import com.miniproject.be.domain.mypage.dto.response.AnalyticsSummaryResponse;
 import com.miniproject.be.domain.mypage.dto.response.BudgetResponse;
 import com.miniproject.be.domain.mypage.service.MypageService;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +52,7 @@ public class MypageController {
 
 
     @GetMapping("/analytics/summary")
-    public ResponseEntity<ApiResponse<Object>> getAnalyticsSummary(
+    public ResponseEntity<ApiResponse<AnalyticsSummaryResponse>> getAnalyticsSummary(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam String period
     ) {
