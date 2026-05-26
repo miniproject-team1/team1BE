@@ -1,9 +1,13 @@
 package com.miniproject.be.domain.diary.service;
 
+import com.miniproject.be.common.exception.CustomException;
+import com.miniproject.be.common.exception.ErrorCode;
 import com.miniproject.be.domain.diary.dto.*;
 import com.miniproject.be.domain.diary.entity.Diary;
 import com.miniproject.be.domain.diary.entity.Expense;
 import com.miniproject.be.domain.diary.repository.DiaryRepository;
+import com.miniproject.be.domain.user.entity.User;
+import com.miniproject.be.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,14 +20,19 @@ import java.time.LocalDate;
 public class DiaryService {
 
     private final DiaryRepository diaryRepository;
+    private final UserRepository userRepository;
 
-    public DiaryCreateResponse createDiary(DiaryCreateRequest request) {
+    public DiaryCreateResponse createDiary(Long userId, DiaryCreateRequest request) {
 
-        if (diaryRepository.findByDiaryDate(request.getDiary_date()).isPresent()) {
-            throw new IllegalArgumentException("이미 해당 날짜의 일기가 존재합니다.");
+        if (diaryRepository.findByUserIdAndDiaryDate(userId, request.getDiary_date()).isPresent()) {
+            throw new CustomException(ErrorCode.DIARY_ALREADY_EXISTS);
         }
 
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
         Diary diary = new Diary(
+                user,
                 request.getDiary_date(),
                 request.getEmotion().getEmoji(),
                 request.getEmotion().getReason(),
@@ -54,16 +63,14 @@ public class DiaryService {
     }
 
     @Transactional(readOnly = true)
-    public DiaryGetResponse getDiary(LocalDate diaryDate) {
-        Diary diary = diaryRepository.findByDiaryDate(diaryDate)
-                .orElseThrow(() -> new IllegalArgumentException("해당 날짜의 일기가 없습니다."));
+    public DiaryGetResponse getDiary(Long userId, LocalDate diaryDate) {
+        Diary diary = findOwnedDiary(userId, diaryDate);
 
         return DiaryGetResponse.from(diary);
     }
 
-    public DiaryCreateResponse updateDiary(DiaryCreateRequest request) {
-        Diary diary = diaryRepository.findByDiaryDate(request.getDiary_date())
-                .orElseThrow(() -> new IllegalArgumentException("해당 날짜의 일기가 없습니다."));
+    public DiaryCreateResponse updateDiary(Long userId, DiaryCreateRequest request) {
+        Diary diary = findOwnedDiary(userId, request.getDiary_date());
 
         diary.update(
                 request.getEmotion().getEmoji(),
@@ -93,15 +100,14 @@ public class DiaryService {
         );
     }
 
-    public ExpenseDeleteResponse deleteExpense(LocalDate diaryDate, Long expenseId) {
-        Diary diary = diaryRepository.findByDiaryDate(diaryDate)
-                .orElseThrow(() -> new IllegalArgumentException("해당 날짜의 일기가 없습니다."));
+    public ExpenseDeleteResponse deleteExpense(Long userId, LocalDate diaryDate, Long expenseId) {
+        Diary diary = findOwnedDiary(userId, diaryDate);
 
         boolean exists = diary.getExpenses().stream()
                 .anyMatch(expense -> expense.getId().equals(expenseId));
 
         if (!exists) {
-            throw new IllegalArgumentException("해당 소비 항목이 없습니다.");
+            throw new CustomException(ErrorCode.EXPENSE_NOT_FOUND);
         }
 
         diary.removeExpense(expenseId);
@@ -109,12 +115,17 @@ public class DiaryService {
         return new ExpenseDeleteResponse(diary.getDiaryDate(), expenseId);
     }
 
-    public DiaryDeleteResponse deleteDiary(LocalDate diaryDate) {
-        Diary diary = diaryRepository.findByDiaryDate(diaryDate)
-                .orElseThrow(() -> new IllegalArgumentException("해당 날짜의 일기가 없습니다."));
+    public DiaryDeleteResponse deleteDiary(Long userId, LocalDate diaryDate) {
+        Diary diary = findOwnedDiary(userId, diaryDate);
 
         diaryRepository.delete(diary);
 
         return new DiaryDeleteResponse(diaryDate);
+    }
+
+    // 일기를 찾고, 그게 이 유저의 것인지 확인하는 공통 메서드
+    private Diary findOwnedDiary(Long userId, LocalDate diaryDate) {
+        return diaryRepository.findByUserIdAndDiaryDate(userId, diaryDate)
+                .orElseThrow(() -> new CustomException(ErrorCode.DIARY_NOT_FOUND));
     }
 }

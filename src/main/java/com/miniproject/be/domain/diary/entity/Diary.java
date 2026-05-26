@@ -1,5 +1,6 @@
 package com.miniproject.be.domain.diary.entity;
 
+import com.miniproject.be.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -10,7 +11,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "diaries")
+@Table(
+        name = "diaries",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_diary_user_date",
+                        columnNames = {"user_id", "diary_date"}
+                )
+        }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Diary {
@@ -20,7 +29,11 @@ public class Diary {
     @Column(name = "diary_id")
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Column(name = "diary_date", nullable = false)
     private LocalDate diaryDate;
 
     private String emoji;
@@ -35,7 +48,9 @@ public class Diary {
     @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Expense> expenses = new ArrayList<>();
 
-    public Diary(LocalDate diaryDate, String emoji, String emotionReason, List<String> tags, String emotionMemo) {
+    public Diary(User user, LocalDate diaryDate, String emoji, String emotionReason,
+                 List<String> tags, String emotionMemo) {
+        this.user = user;
         this.diaryDate = diaryDate;
         this.emoji = emoji;
         this.emotionReason = emotionReason;

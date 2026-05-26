@@ -14,7 +14,9 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             select distinct d
             from Diary d
             left join fetch d.expenses
-            where d.diaryDate = :diaryDate
+            where d.user.id = :userId
+              and d.diaryDate = :diaryDate
             """)
-    Optional<Diary> findByDiaryDate(@Param("diaryDate") LocalDate diaryDate);
+    Optional<Diary> findByUserIdAndDiaryDate(@Param("userId") Long userId,
+                                             @Param("diaryDate") LocalDate diaryDate);
 }
