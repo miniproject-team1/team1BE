@@ -38,8 +38,6 @@
 
 ## 1. 🌿 브랜치 전략
 
-- `main`은 배포용 — **절대 직접 push 금지** ❌
-- `develop`은 통합 브랜치 — 여기로 PR 머지
 - 기능 개발은 항상 브랜치 따로 파서 작업
     - `feature/기능명` (예: `feature/login`, `feature/diary-save`)
     - `fix/버그명` (예: `fix/calendar-date-bug`)
